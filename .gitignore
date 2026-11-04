@@ -1,0 +1,9 @@
+music-now.lua
+nowplaying.txt
+z2debug.txt
+packs-zora.txt
+packs-z2r.txt
+fceux-path.txt
+*.nes
+*.json5
+node_modules/

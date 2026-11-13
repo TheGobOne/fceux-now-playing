@@ -1,0 +1,3 @@
+// Replace the filepath below with your 2.7.0 FCEUX64.exe file location.
+
+C:\Program Files\FCEUX\fceux64.exe

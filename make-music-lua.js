@@ -33,11 +33,11 @@ function loadCands(files) {
 }
 
 const counts = new Uint16Array(65536), touched = [];
-// the same track appearing in two packs (even under another name) is not a rival
-const dup = (a, b) => a.data.subarray(0, 300).equals(b.data.subarray(0, 300));
+// the same track appearing in two packs (even under another name, or as a near-copy) is not a rival
+const dup = (a, b) => { const n = Math.min(300, a.data.length, b.data.length); let k = 0; for (let i = 0; i < n; i++) if (a.data[i] === b.data[i]) k++; return n > 0 && k / n >= 0.9; };
 
 function matchPack(cands) {
-  const out = {}; let sure = 0;
+  const out = {}, dbg = []; let sure = 0;
   for (const [name, n] of Object.entries(SONGS)) {
     const bank = R[TABLE + 2 * n] ^ 0xFF, addr = R[ADDR + 2 * n] | (R[ADDR + 2 * n + 1] << 8), off = HEADER + bank * BANK + (addr - BASE);
     let best = null, second = 0;
@@ -56,9 +56,10 @@ function matchPack(cands) {
     }
     const ok = best && best.s > 0.3 && best.s > second + 0.12;
     if (ok) sure++;
+    if (!ok) dbg.push(`${name}: best ${best ? best.s.toFixed(2) : "none"}, runner-up ${second.toFixed(2)}`);
     out[name] = ok ? `${best.t.title.replace(/^\s*\d+\s*[-.–]\s*/, "")} (${best.t.game})` : "unknown";
   }
-  return { out, sure };
+  return { out, sure, dbg };
 }
 
 const files = PACKS.filter(p => fs.existsSync(p));
@@ -69,3 +70,4 @@ const names = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringif
 const lua = fs.readFileSync(path.join(__dirname, "template.lua"), "utf8").replace("--NAMES--", names).replace(/seed \d+/, path.basename(rom));
 fs.writeFileSync(path.join(__dirname, "music-now.lua"), lua);
 console.log(`Matched ${best.sure} of 12 slots across ${files.length} packs (${cands.length} tracks, ${cached ? "from cache" : "parsed"}, ${((Date.now() - t0) / 1000).toFixed(1)}s). Unmatched: ${Object.entries(best.out).filter(([, v]) => v === "unknown").map(([k]) => k).join(", ") || "none"}.`);
+if (best.dbg.length) console.log("Unsure slots:\n  " + best.dbg.join("\n  "));

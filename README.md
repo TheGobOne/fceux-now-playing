@@ -8,7 +8,7 @@ Works with ROMs built with custom music packs (`.json5`, as made by the NES Cust
 
 1. Install [Node.js](https://nodejs.org) and [FCEUX](https://fceux.com) (win64 2.7 tested).
 2. Put the full path to `fceux64.exe` in `fceux-path.txt` (or put it on your PATH).
-3. List the folder your music packs you built your ROMs from, one path per line:
+3. List the folder path where the music packs you built your ROMs from are located, one path per line:
    - ZORA: `packs-zora.txt`
    - Z2R: `packs-z2r.txt`
 

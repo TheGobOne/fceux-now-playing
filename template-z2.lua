@@ -51,7 +51,7 @@ while true do
   if frame % 20 == 0 then pick() end
   -- right-aligned; the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
   local w = 0
-  for ch in current:gmatch(".") do w = w + (ch:find("[ ilI%.,:;!'()|]") and 4 or 5.5) end
+  for ch in current:gmatch(".") do w = w + (ch:find("[ ilI%.,:;!'()|]") and 4 or ch:find("[WMmw]") and 7 or 5.5) end
   local x = math.max(2, math.floor(253 - w))
   for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
     gui.text(x + d[1], TOP + d[2], current, "black", "clear")   -- outline: black copies around the text

@@ -41,7 +41,7 @@ function loadCands(files) {
 
 const counts = new Uint16Array(65536), touched = [];
 // the same track appearing in two packs (even under another name, or as a near-copy) is not a rival
-const dup = (a, b) => { const n = Math.min(300, a.data.length, b.data.length); let k = 0; for (let i = 0; i < n; i++) if (a.data[i] === b.data[i]) k++; return n > 0 && k / n >= 0.9; };
+const dup = (a, b) => { const n = Math.min(300, a.data.length, b.data.length); let k = 0; for (let i = 0; i < n; i++) if (a.data[i] === b.data[i]) k++; return n > 0 && k / n >= 0.8; };
 
 function matchPack(cands) {
   const out = {}, dbg = []; let sure = 0;

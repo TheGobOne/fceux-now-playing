@@ -61,7 +61,7 @@ function matchPack(cands) {
       const s = (same + 2 * moved) / len;
       if (!best || s > best.s) { if (best && !dup(best.t, t)) second = best.s; best = { s, t }; } else if (s > second && !dup(best.t, t)) second = s;
     }
-    const ok = best && best.s > 0.3 && best.s > second + 0.12;
+    const ok = best && best.s > 0.3 && best.s > second + 0.10;
     if (ok) sure++;
     if (!ok) dbg.push(`${name}: best ${best ? best.s.toFixed(2) : "none"}, runner-up ${second.toFixed(2)}`);
     out[name] = ok ? `${best.t.title.replace(/^\s*\d+\s*[-.–]\s*/, "")} (${best.t.game})` : "unknown";

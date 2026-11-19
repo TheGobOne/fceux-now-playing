@@ -7,10 +7,12 @@ Works with ROMs built with custom music packs (`.json5`, as made by the NES Cust
 ## Setup
 
 1. Install [Node.js](https://nodejs.org) and [FCEUX](https://fceux.com) (win64 2.7 tested).
-2. Put the full path to `fceux64.exe` in `fceux-path.txt` (or put it on your PATH).
-3. List the music packs you built your ROMs from, one path per line. A path can be a `.json5` file or a folder (searched for `.json5` files):
-   - ZORA: `packs-zora.txt`
-   - Z2R: `packs-z2r.txt`
+2. Copy `fceux-path.example.txt` to `fceux-path.txt` and put the full path to `fceux64.exe` on its one line (or skip this if `fceux64.exe` is on your PATH).
+3. Copy the example list for your game and put in the music packs you built your ROMs from, one path per line. A path can be a `.json5` file or a folder (searched for `.json5` files). This is where your music packs are, not your ROMs:
+   - ZORA: copy `packs-zora.example.txt` to `packs-zora.txt`
+   - Z2R: copy `packs-z2r.example.txt` to `packs-z2r.txt`
+
+`nowplaying.txt` is created the first time FCEUX runs the script, so there is nothing to set up for it. Your own `fceux-path.txt` and `packs-*.txt` stay out of git.
 
 ## Use
 

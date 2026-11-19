@@ -1,0 +1,2 @@
+// One path per line: a .json5 pack file or a folder of packs. Lines starting with // are ignored.
+C:\Users\YourName\Documents\Music Packs\Master (Z2R).json5

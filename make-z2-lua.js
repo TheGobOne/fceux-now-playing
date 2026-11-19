@@ -1,11 +1,18 @@
-// node make-z2-lua.js <z2r-rom.nes> [pack.json5 ...]
+// node make-z2-lua.js <z2r-rom.nes> [pack.json5 or folder ...]
 // Finds each pack track inside a Z2R ROM (music banks 16-23, 8 KB each, mapped at $A000) and writes music-now.lua for it.
 // Prints only counts; track names stay in the Lua file.
+// Pack list: the arguments, or packs-z2r.txt (one path per line). A path can be a .json5 file or a folder (searched for .json5 files).
 const fs = require("fs"), path = require("path");
 const c = require("./core.js");
 const [rom, ...given] = process.argv.slice(2);
-const PACKS = given.length ? given : (fs.existsSync(path.join(__dirname, "packs-z2r.txt")) ? fs.readFileSync(path.join(__dirname, "packs-z2r.txt"), "utf8").split("\n").map(l => l.trim()).filter(Boolean) : []);
-if (!rom || !PACKS.length) { console.log("Usage: node make-z2-lua.js <rom.nes> [pack.json5 ...]  (or list your packs in packs-z2r.txt, one path per line)"); process.exit(1); }
+const listPacks = p => {
+  let st; try { st = fs.statSync(p); } catch (e) { return []; }
+  if (!st.isDirectory()) return [p];
+  return fs.readdirSync(p, { withFileTypes: true }).flatMap(e => e.isDirectory() ? listPacks(path.join(p, e.name)) : /.json5$/i.test(e.name) ? [path.join(p, e.name)] : []);
+};
+const PACK_LIST = given.length ? given : (fs.existsSync(path.join(__dirname, "packs-z2r.txt")) ? fs.readFileSync(path.join(__dirname, "packs-z2r.txt"), "utf8").split("\n").map(l => l.trim()).filter(Boolean) : []);
+const PACKS = [...new Set(PACK_LIST.flatMap(listPacks))];
+if (!rom || !PACKS.length) { console.log("Usage: node make-z2-lua.js <rom.nes> [pack.json5 or folder ...]  (or list your packs or pack folders in packs-z2r.txt, one path per line)"); process.exit(1); }
 const R = fs.readFileSync(rom), HEADER = 0x10, BANK = 0x2000, FIRST = 16, LAST = 27;   // banks 28+ are game code
 
 // share of the track's first 600 bytes that match the ROM at `at`, counting 16-bit words that all moved by the same amount (relocated pointers)

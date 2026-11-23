@@ -20,11 +20,14 @@ publish()
 -- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
 local VY = { top = 8, middle = 116, bottom = 224 }
 local posV, posH = "top", "right"
+local SPEED = 15              -- scroll speed in pixels a second; "speed 30" in position.txt changes it (1 to 120)
 local ALWAYS_SCROLL = false   -- the word "scroll" in position.txt keeps the name moving even when it fits
 do
   local f = io.open("position.txt", "r")
   if f then
     local line = (f:read("*l") or ""):lower(); f:close()
+    local n = tonumber(line:match("speed%s*=?%s*(%d+)"))
+    if n then SPEED = math.max(1, math.min(120, n)) end
     local v, h, middles = nil, nil, 0
     for word in line:gmatch("%a+") do
       if word == "top" or word == "bottom" then v = word
@@ -48,7 +51,6 @@ local textY = VY[posV]
 
 -- Scrolling for names too wide for the screen (idea from nesrex).
 local MAXW, PAUSE = 244, 75   -- pixel budget, frames to hold at the start
-local FRAMES_PER_PX = 2       -- 2 means the name moves 30 px a second
 -- the emulator font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
 local function cw(ch) return ch:find("[ ilI%.,:;!'()|]") and 3.5 or 5.5 end
 local function textw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) end return w end
@@ -68,10 +70,10 @@ local function drawName(text, y)
   end
   if scroll.text ~= text then scroll.text, scroll.px, scroll.tick = text, 0, 0 end
   scroll.tick = scroll.tick + 1
-  if scroll.tick > PAUSE and scroll.tick % FRAMES_PER_PX == 0 then scroll.px = scroll.px + 1 end
+  if scroll.tick > PAUSE then scroll.px = scroll.px + SPEED / 60 end   -- the NES runs at 60 frames a second
   local loop = text .. "      "                     -- gap between the end and the start
   local loopW = math.floor(textw(loop))
-  local x0 = 6 - (scroll.px % loopW)                 -- two copies of the loop so the wrap has no gap
+  local x0 = 6 - math.floor(scroll.px % loopW)                 -- two copies of the loop so the wrap has no gap
   outlined(loop, x0, y)
   outlined(loop, x0 + loopW, y)
 end

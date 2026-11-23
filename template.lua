@@ -47,31 +47,34 @@ end
 local textY = VY[posV]
 
 -- Scrolling for names too wide for the screen (idea from nesrex).
-local MAXW, SPEED, PAUSE = 244, 12, 75   -- pixel budget, frames per step, frames to hold at the start
--- the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
+local MAXW, PAUSE = 244, 75   -- pixel budget, frames to hold at the start
+local FRAMES_PER_PX = 2       -- 2 means the name moves 30 px a second
+-- the emulator font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
 local function cw(ch) return ch:find("[ ilI%.,:;!'()|]") and 3.5 or 5.5 end
 local function textw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) end return w end
-
-local scroll = { text = nil, pos = 0, tick = 0 }
-local function visible(text)
-  if not ALWAYS_SCROLL and textw(text) <= MAXW then return text, true end
-  if scroll.text ~= text then scroll.text, scroll.pos, scroll.tick = text, 0, 0 end
-  scroll.tick = scroll.tick + 1
-  local loop = text .. "    "
-  if scroll.tick > PAUSE and scroll.tick % SPEED == 0 then
-    scroll.pos = (scroll.pos + 1) % #loop
+local scroll = { text = nil, px = 0, tick = 0 }
+-- draws the name with its black outline at (x, y)
+local function outlined(text, x, y)
+  for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
+    gui.text(x + d[1], y + d[2], text, "black", "clear")   -- outline: black copies around the text
   end
-  local s, w = "", 0
-  for i = 0, 200 do   -- wraps around the loop, so a short name repeats to fill the width
-    local k = (scroll.pos + i) % #loop + 1
-    local ch = loop:sub(k, k)
-    w = w + cw(ch)
-    if w > MAXW then break end
-    s = s .. ch
-  end
-  return s, false
+  gui.text(x, y, text, "white", "clear")
 end
-
+-- names that fit go where position.txt says; longer ones (or "scroll") move a pixel at a time from the left edge
+local function drawName(text, y)
+  if not ALWAYS_SCROLL and textw(text) <= MAXW then
+    outlined(text, math.max(2, placeX(textw(text), true)), y)
+    return
+  end
+  if scroll.text ~= text then scroll.text, scroll.px, scroll.tick = text, 0, 0 end
+  scroll.tick = scroll.tick + 1
+  if scroll.tick > PAUSE and scroll.tick % FRAMES_PER_PX == 0 then scroll.px = scroll.px + 1 end
+  local loop = text .. "      "                     -- gap between the end and the start
+  local loopW = math.floor(textw(loop))
+  local x0 = 6 - (scroll.px % loopW)                 -- two copies of the loop so the wrap has no gap
+  outlined(loop, x0, y)
+  outlined(loop, x0 + loopW, y)
+end
 while true do
   local a = memory.readbyte(0x600)
   if a ~= 0 and a ~= prev then
@@ -90,12 +93,6 @@ while true do
     end
   end
   prev = a
-  -- names that fit go where position.txt says; longer ones scroll from the left edge
-  local shown, fits = visible(current)
-  local x = math.max(2, placeX(textw(shown), fits))
-  for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
-    gui.text(x + d[1], textY + d[2], shown, "black", "clear")   -- outline: black copies around the text
-  end
-  gui.text(x, textY, shown, "white", "clear")
+  drawName(current, textY)
   emu.frameadvance()
 end

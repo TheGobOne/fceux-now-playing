@@ -17,7 +17,7 @@ end
 publish()
 
 -- Scrolling for names too wide for the screen.
-local MAXW, SPEED, PAUSE = 244, 5, 90   -- pixel budget, frames per step, frames to hold at the start
+local MAXW, SPEED, PAUSE = 244, 12, 75   -- pixel budget, frames per step, frames to hold at the start
 -- the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
 local function cw(ch) return ch:find("[ ilI%.,:;!'()|]") and 4 or 6 end
 local function textw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) end return w end
@@ -65,8 +65,8 @@ while true do
   local shown, fits = visible(current)
   local x = fits and math.max(2, 252 - textw(shown)) or 6
   for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
-    gui.text(x + d[1], 8 + d[2], shown, "black", "clear")   -- outline: black copies around the text
+    gui.text(x + d[1], 10 + d[2], shown, "black", "clear")   -- outline: black copies around the text
   end
-  gui.text(x, 8, shown, "white", "clear")
+  gui.text(x, 10, shown, "white", "clear")
   emu.frameadvance()
 end

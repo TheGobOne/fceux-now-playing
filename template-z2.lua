@@ -109,16 +109,9 @@ local function onMusicRead(addr)
   else u.n = u.n + 1; if addr < u.lo then u.lo = addr end; if addr > u.hi then u.hi = addr end end
 end
 
--- The read hook runs for every read in $A000-$BFFF (about 10,000 a frame), so it is only installed while a music bank is mapped.
-local hooked = false
-memory.registerwrite(0x5115, function(addr, size, val)
-  a000 = val
-  local music = val >= 0x90 and val <= 0x9B
-  if music ~= hooked then
-    hooked = music
-    memory.registerread(0xA000, 0x2000, music and onMusicRead or nil)
-  end
-end)
+memory.registerwrite(0x5115, function(addr, size, val) a000 = val end)
+-- Registered once for good: switching the hook on and off from the $5115 write callback measured about 3x slower, because $5115 is written about 12 times a frame.
+memory.registerread(0xA000, 0x2000, onMusicRead)
 
 local function pick()
   local best, bestv = nil, 0

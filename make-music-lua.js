@@ -1,9 +1,10 @@
 // node make-music-lua.js <rom.nes> [pack.json5 or folder ...]
-// Matches each music slot of a ZORA ROM to the track in your pack and writes music-now.lua (names inside) next to the ROM's folder.
+// Matches each music slot of a ZORA ROM to the track in your pack and writes music-now-zora.lua (names inside) next to the ROM's folder.
 // Prints only how sure it is; track names stay in the Lua file.
 // Pack list: the arguments, or packs-zora.txt (one path per line). A path can be a .json5 file or a folder (searched for .json5 files).
 const fs = require("fs"), path = require("path");
 const c = require("./core.js");
+const { foldName } = require("./fold.js");
 const t0 = Date.now();
 const [rom, ...given] = process.argv.slice(2);
 const listPacks = p => {
@@ -82,8 +83,11 @@ function matchPack(cands) {
 const { cands, cached } = loadCands(PACKS);
 const best = matchPack(cands);
 if (!best || best.sure === 0) { console.log("No pack matched this ROM (0 of 12). Not written."); process.exit(1); }
-const names = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringify(v)},`).join("\n");
-const lua = fs.readFileSync(path.join(__dirname, "template.lua"), "utf8").replace("--NAMES--", names).replace(/seed \d+/, path.basename(rom));
-fs.writeFileSync(path.join(__dirname, "music-now.lua"), lua);
+const clean = s => s.replace(/[\x00-\x1f\x7f]/g, " ");   // control characters would come out as text in Lua 5.1
+const fold = s => foldName(clean(s));   // FCEUX font is ASCII only (see fold.js)
+const names = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringify(clean(v))},`).join("\n");
+const shown = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringify(fold(v))},`).join("\n");
+const lua = fs.readFileSync(path.join(__dirname, "template.lua"), "utf8").replace("--NAMES--", () => names).replace("--SHOWN--", () => shown).replace(/seed \d+/, () => path.basename(rom));
+fs.writeFileSync(path.join(__dirname, "music-now-zora.lua"), lua);
 console.log(`Matched ${best.sure} of 12 slots across ${PACKS.length} packs (${cands.length} tracks, ${cached ? "from cache" : "parsed"}, layout ${LAYOUT.name}, ${((Date.now() - t0) / 1000).toFixed(1)}s). Unmatched: ${Object.entries(best.out).filter(([, v]) => v === "unknown").map(([k]) => k).join(", ") || "none"}.`);
 if (best.dbg.length) console.log("Unsure slots:\n  " + best.dbg.join("\n  "));

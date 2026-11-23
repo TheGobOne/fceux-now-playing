@@ -21,7 +21,7 @@ Drag your ROM onto:
 - `fceux-with-music.bat` for ZORA
 - `fceux-with-music-z2.bat` for Z2R
 
-It matches the ROM's songs against your packs, writes `music-now.lua` (with the names for that seed), and opens FCEUX running it. A song missing from your packs shows as `unknown` (ZORA) or leaves the previous name on screen (Z2R): add its pack to the list.
+It matches the ROM's songs against your packs, writes `music-now-zora.lua` or `music-now-z2.lua` (with the names for that seed), and opens FCEUX running it. A song missing from your packs shows as `unknown` (ZORA) or leaves the previous name on screen (Z2R): add its pack to the list.
 
 Or run a generator yourself:
 

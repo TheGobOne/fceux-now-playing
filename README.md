@@ -30,7 +30,7 @@ node make-music-lua.js <zora-rom.nes> [pack.json5 ...]
 node make-z2-lua.js <z2r-rom.nes> [pack.json5 ...]
 ```
 
-To move the name, copy `position.example.txt` to `position.txt` and edit its one line: `top`, `middle` or `bottom`, then `left`, `center` or `right` (for example `bottom left`). Add the word `scroll` (for example `bottom left scroll`) to keep the name scrolling even when it fits (ZORA only). `bottom middle` works too: a lone `middle` fills whichever part you left out. Restart the script in FCEUX after changing it. Names too long to fit scroll from the left edge in ZORA and stay at the left edge in Z2R.
+To move the name, copy `position.example.txt` to `position.txt` and edit its one line: `top`, `middle` or `bottom`, then `left`, `center` or `right` (for example `bottom left`). Add the word `scroll` (for example `bottom left scroll`) to keep the name scrolling even when it fits. `bottom middle` works too: a lone `middle` fills whichever part you left out. Restart the script in FCEUX after changing it. Names too long to fit scroll from the left edge.
 
 `nowplaying.txt` is rewritten every time the song changes; point an OBS text source at it.
 

@@ -24,9 +24,17 @@ do
   local f = io.open("position.txt", "r")
   if f then
     local line = (f:read("*l") or ""):lower(); f:close()
+    local v, h, middles = nil, nil, 0
     for word in line:gmatch("%a+") do
-      if VY[word] then posV = word elseif word == "left" or word == "right" or word == "center" or word == "centre" then posH = word end
+      if word == "top" or word == "bottom" then v = word
+      elseif word == "left" or word == "right" then h = word
+      elseif word == "center" or word == "centre" then h = "center"
+      elseif word == "middle" then middles = middles + 1 end
     end
+    -- "middle" fills whichever of the two is still unset: "bottom middle" is bottom + centered, "middle left" is vertically centered
+    if middles > 0 and not v then v = "middle"; middles = middles - 1 end
+    if middles > 0 and not h then h = "center" end
+    if v or h then posV, posH = v or "top", h or "right" end
   end
 end
 local function placeX(w, fits)

@@ -20,6 +20,7 @@ publish()
 -- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
 local VY = { top = 8, middle = 116, bottom = 224 }
 local posV, posH = "top", "right"
+local ALWAYS_SCROLL = false   -- the word "scroll" in position.txt keeps the name moving even when it fits
 do
   local f = io.open("position.txt", "r")
   if f then
@@ -29,6 +30,7 @@ do
       if word == "top" or word == "bottom" then v = word
       elseif word == "left" or word == "right" then h = word
       elseif word == "center" or word == "centre" then h = "center"
+      elseif word == "scroll" then ALWAYS_SCROLL = true
       elseif word == "middle" then middles = middles + 1 end
     end
     -- "middle" fills whichever of the two is still unset: "bottom middle" is bottom + centered, "middle left" is vertically centered
@@ -52,7 +54,7 @@ local function textw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) en
 
 local scroll = { text = nil, pos = 0, tick = 0 }
 local function visible(text)
-  if textw(text) <= MAXW then return text, true end
+  if not ALWAYS_SCROLL and textw(text) <= MAXW then return text, true end
   if scroll.text ~= text then scroll.text, scroll.pos, scroll.tick = text, 0, 0 end
   scroll.tick = scroll.tick + 1
   local loop = text .. "    "
@@ -60,7 +62,7 @@ local function visible(text)
     scroll.pos = (scroll.pos + 1) % #loop
   end
   local s, w = "", 0
-  for i = 0, #loop - 1 do
+  for i = 0, 200 do   -- wraps around the loop, so a short name repeats to fill the width
     local k = (scroll.pos + i) % #loop + 1
     local ch = loop:sub(k, k)
     w = w + cw(ch)

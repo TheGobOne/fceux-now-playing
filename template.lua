@@ -47,7 +47,7 @@ local textY = VY[posV]
 -- Scrolling for names too wide for the screen (idea from nesrex).
 local MAXW, SPEED, PAUSE = 244, 12, 75   -- pixel budget, frames per step, frames to hold at the start
 -- the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
-local function cw(ch) return ch:find("[ ilI%.,:;!'()|]") and 4 or 6 end
+local function cw(ch) return ch:find("[ ilI%.,:;!'()|]") and 3.5 or 5.5 end
 local function textw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) end return w end
 
 local scroll = { text = nil, pos = 0, tick = 0 }

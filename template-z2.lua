@@ -17,8 +17,10 @@ local ALWAYS_SCROLL = false   -- the word "scroll" in position.txt keeps the nam
 do
   local f = io.open("position.txt", "r")
   if f then
-    local line = (f:read("*l") or ""):lower(); f:close()
-    local n = tonumber(line:match("speed%s*=?%s*(%d+)"))
+    local line = ""
+    for l in f:lines() do if l:find("%S") then line = l:lower(); break end end   -- first non-empty line
+    f:close()
+    local n = tonumber(line:match("speed%s*[:=]?%s*(%d+)"))
     if n then SPEED = math.max(1, math.min(120, n)) end
     local v, h, middles = nil, nil, 0
     for word in line:gmatch("%a+") do
@@ -44,11 +46,27 @@ local textY = VY[posV]
 local MAXW, PAUSE = 244, 75   -- pixel budget, frames to hold at the start
 -- the emulator font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
 local function cw(ch) return ch:find("[ ilI%.,:;!'()|]") and 4 or ch:find("[WMmw]") and 7 or 5.5 end
-local function textw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) end return w end
+local function estw(s) local w = 0 for ch in s:gmatch(".") do w = w + cw(ch) end return w end
+-- gui.text returns the x where the text ended on the FCEUX build tested (not in fceux.chm), so drawing far off screen measures the real width.
+-- Checked for sense, and the estimate is used if the value looks wrong. Widths are cached per string.
+local widths = {}
+local function textw(s)
+  local w = widths[s]
+  if w then return w end
+  w = estw(s)
+  local ok, r = pcall(gui.text, -1000, 0, s)
+  if ok and type(r) == "number" then
+    local m = r + 1000
+    if m > 0 and m <= 8 * #s then w = m end
+  end
+  widths[s] = w
+  return w
+end
 local scroll = { text = nil, px = 0, tick = 0 }
 -- draws the name with its black outline at (x, y)
+local OFFSETS = { {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }
 local function outlined(text, x, y)
-  for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
+  for _, d in ipairs(OFFSETS) do
     gui.text(x + d[1], y + d[2], text, "black", "clear")   -- outline: black copies around the text
   end
   gui.text(x, y, text, "white", "clear")
@@ -80,9 +98,7 @@ local function publish()
 end
 publish()
 
-memory.registerwrite(0x5115, function(addr, size, val) a000 = val end)
-
-memory.registerread(0xA000, 0x2000, function(addr)
+local function onMusicRead(addr)
   if a000 < 0x90 or a000 > 0x9B then return end   -- not a music bank: that read is game code
   local bank = a000 - 0x80
   for i, s in ipairs(SONGS) do
@@ -91,6 +107,17 @@ memory.registerread(0xA000, 0x2000, function(addr)
   local u = unknown[bank]
   if not u then unknown[bank] = { lo = addr, hi = addr, n = 1 }
   else u.n = u.n + 1; if addr < u.lo then u.lo = addr end; if addr > u.hi then u.hi = addr end end
+end
+
+-- The read hook runs for every read in $A000-$BFFF (about 10,000 a frame), so it is only installed while a music bank is mapped.
+local hooked = false
+memory.registerwrite(0x5115, function(addr, size, val)
+  a000 = val
+  local music = val >= 0x90 and val <= 0x9B
+  if music ~= hooked then
+    hooked = music
+    memory.registerread(0xA000, 0x2000, music and onMusicRead or nil)
+  end
 end)
 
 local function pick()

@@ -14,8 +14,17 @@ const listPacks = p => {
 const PACK_LIST = given.length ? given : (fs.existsSync(path.join(__dirname, "packs-zora.txt")) ? fs.readFileSync(path.join(__dirname, "packs-zora.txt"), "utf8").split("\n").map(l => l.trim()).filter(Boolean) : []);
 const PACKS = [...new Set(PACK_LIST.flatMap(listPacks))];
 if (!rom || !PACKS.length) { console.log("Usage: node make-music-lua.js <rom.nes> [pack.json5 or folder ...]  (or list your packs or pack folders in packs-zora.txt, one path per line)"); process.exit(1); }
-const R = fs.readFileSync(rom), HEADER = 0x10, TABLE = 0x10, ADDR = 0x90, BANK = 0x4000, BASE = 0x8000;   // ZORA's lozft layout
+const R = fs.readFileSync(rom), HEADER = 0x10, TABLE = 0x10, ADDR = 0x90;
 const SONGS = { overworld: 0, ending: 4, level9: 5, title: 7, level1: 6, level2: 11, level3: 12, level4: 13, level5: 14, level6: 15, level7: 16, level8: 17 };
+
+// Two ROM layouts: ZORA 2.x (MMC3, 8 KB banks seen at $A000) and the older one (16 KB banks at $8000).
+// The mapper number picks the likelier layout first; the other wins only if more of the 12 song slots fall inside the ROM under it.
+const L8 = { name: "8KB banks at $A000", BANK: 0x2000, BASE: 0xA000 }, L16 = { name: "16KB banks at $8000", BANK: 0x4000, BASE: 0x8000 };
+const slotOff = (n, L) => HEADER + (R[TABLE + 2 * n] ^ 0xFF) * L.BANK + ((R[ADDR + 2 * n] | (R[ADDR + 2 * n + 1] << 8)) - L.BASE);
+const inRange = L => Object.values(SONGS).filter(n => { const o = slotOff(n, L); return o >= HEADER && o + 16 <= R.length; }).length;
+const mapper = (R[6] >> 4) | (R[7] & 0xF0);
+const order = mapper === 4 ? [L8, L16] : [L16, L8];
+const LAYOUT = inRange(order[1]) > inRange(order[0]) ? order[1] : order[0];
 
 // Only the first 1500 bytes of each track are compared, so only the first 2000 base64 characters are kept.
 // The parsed result is cached in pack-cache.json until a pack file's size or modified time changes.
@@ -46,7 +55,7 @@ const dup = (a, b) => { const n = Math.min(300, a.data.length, b.data.length); l
 function matchPack(cands) {
   const out = {}, dbg = []; let sure = 0;
   for (const [name, n] of Object.entries(SONGS)) {
-    const bank = R[TABLE + 2 * n] ^ 0xFF, addr = R[ADDR + 2 * n] | (R[ADDR + 2 * n + 1] << 8), off = HEADER + bank * BANK + (addr - BASE);
+    const off = slotOff(n, LAYOUT);
     let best = null, second = 0;
     for (const t of cands) {
       const len = Math.min(t.data.length, 1500); if (off < 0 || off + len > R.length) continue;
@@ -61,7 +70,8 @@ function matchPack(cands) {
       const s = (same + 2 * moved) / len;
       if (!best || s > best.s) { if (best && !dup(best.t, t)) second = best.s; best = { s, t }; } else if (s > second && !dup(best.t, t)) second = s;
     }
-    const ok = best && best.s > 0.3 && best.s > second + 0.10;
+    // an essentially exact copy (0.98+) wins over a lower-scoring near-copy of the same song
+    const ok = best && best.s > 0.3 && (best.s > second + 0.10 || (best.s >= 0.98 && best.s > second + 0.01));
     if (ok) sure++;
     if (!ok) dbg.push(`${name}: best ${best ? best.s.toFixed(2) : "none"}, runner-up ${second.toFixed(2)}`);
     out[name] = ok ? `${best.t.title.replace(/^\s*\d+\s*[-.–]\s*/, "")} (${best.t.game})` : "unknown";
@@ -75,5 +85,5 @@ if (!best || best.sure === 0) { console.log("No pack matched this ROM (0 of 12).
 const names = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringify(v)},`).join("\n");
 const lua = fs.readFileSync(path.join(__dirname, "template.lua"), "utf8").replace("--NAMES--", names).replace(/seed \d+/, path.basename(rom));
 fs.writeFileSync(path.join(__dirname, "music-now.lua"), lua);
-console.log(`Matched ${best.sure} of 12 slots across ${PACKS.length} packs (${cands.length} tracks, ${cached ? "from cache" : "parsed"}, ${((Date.now() - t0) / 1000).toFixed(1)}s). Unmatched: ${Object.entries(best.out).filter(([, v]) => v === "unknown").map(([k]) => k).join(", ") || "none"}.`);
+console.log(`Matched ${best.sure} of 12 slots across ${PACKS.length} packs (${cands.length} tracks, ${cached ? "from cache" : "parsed"}, layout ${LAYOUT.name}, ${((Date.now() - t0) / 1000).toFixed(1)}s). Unmatched: ${Object.entries(best.out).filter(([, v]) => v === "unknown").map(([k]) => k).join(", ") || "none"}.`);
 if (best.dbg.length) console.log("Unsure slots:\n  " + best.dbg.join("\n  "));

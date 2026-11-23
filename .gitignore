@@ -8,3 +8,4 @@ fceux-path.txt
 *.json5
 node_modules/
 pack-cache.json
+position.txt

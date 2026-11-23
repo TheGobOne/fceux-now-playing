@@ -1,6 +1,6 @@
 # FCEUX Now Playing
 
-Shows the name of the custom music track playing in a **ZORA** (Zelda 1) or **Z2R** (Zelda 2) randomizer ROM, in the top-right corner of FCEUX, and writes it to `nowplaying.txt` for OBS.
+Shows the name of the custom music track playing in a **ZORA** (Zelda 1) or **Z2R** (Zelda 2) randomizer ROM, in FCEUX (top right by default), and writes it to `nowplaying.txt` for OBS.
 
 Works with ROMs built with custom music packs (`.json5`, as made by the NES Custom Music Tool). The track list stays hidden until a song plays, so it won't spoil your seed.
 
@@ -29,6 +29,8 @@ Or run a generator yourself:
 node make-music-lua.js <zora-rom.nes> [pack.json5 ...]
 node make-z2-lua.js <z2r-rom.nes> [pack.json5 ...]
 ```
+
+To move the name, copy `position.example.txt` to `position.txt` and edit its one line: `top`, `middle` or `bottom`, then `left`, `center` or `right` (for example `bottom left`). Restart the script in FCEUX after changing it. Names too long to fit scroll from the left edge in ZORA and stay at the left edge in Z2R.
 
 `nowplaying.txt` is rewritten every time the song changes; point an OBS text source at it.
 

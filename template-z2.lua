@@ -8,6 +8,25 @@ local SONGS = {
 DEBUG = nil   -- set to io.open("z2debug.txt", "w") to log what the driver read at each check
 local current = "-"
 local TOP = 5           -- text row in pixels from the top, centered in the black band above the HUD (8 was too close to the HUD, 2 too high)
+-- Where the name is drawn: position.txt holds one line such as "top right" or "bottom left".
+-- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
+local VY = { top = TOP, middle = 116, bottom = 224 }
+local posV, posH = "top", "right"
+do
+  local f = io.open("position.txt", "r")
+  if f then
+    local line = (f:read("*l") or ""):lower(); f:close()
+    for word in line:gmatch("%a+") do
+      if VY[word] then posV = word elseif word == "left" or word == "right" or word == "center" or word == "centre" then posH = word end
+    end
+  end
+end
+local function placeX(w, fits)
+  if not fits or posH == "left" then return 6 end
+  if posH == "right" then return 253 - w end
+  return math.floor((256 - w) / 2)
+end
+local textY = VY[posV]
 local a000 = 0         -- last value written to $5115: which bank is mapped at $A000 right now
 local counts = {}       -- reads of each song's data since the last check
 local unknown = {}      -- music-bank reads that fall in no known song, per bank (for the debug log)
@@ -49,13 +68,13 @@ local frame = 0
 while true do
   frame = frame + 1
   if frame % 20 == 0 then pick() end
-  -- right-aligned; the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
+  -- placed by position.txt; the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
   local w = 0
   for ch in current:gmatch(".") do w = w + (ch:find("[ ilI%.,:;!'()|]") and 4 or ch:find("[WMmw]") and 7 or 5.5) end
-  local x = math.max(2, math.floor(253 - w))
+  local x = math.max(2, math.floor(placeX(w, w <= 247)))
   for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
-    gui.text(x + d[1], TOP + d[2], current, "black", "clear")   -- outline: black copies around the text
+    gui.text(x + d[1], textY + d[2], current, "black", "clear")   -- outline: black copies around the text
   end
-  gui.text(x, TOP, current, "white", "clear")
+  gui.text(x, textY, current, "white", "clear")
   emu.frameadvance()
 end

@@ -16,6 +16,26 @@ local function publish()
 end
 publish()
 
+-- Where the name is drawn: position.txt holds one line such as "top right" or "bottom left".
+-- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
+local VY = { top = 8, middle = 116, bottom = 224 }
+local posV, posH = "top", "right"
+do
+  local f = io.open("position.txt", "r")
+  if f then
+    local line = (f:read("*l") or ""):lower(); f:close()
+    for word in line:gmatch("%a+") do
+      if VY[word] then posV = word elseif word == "left" or word == "right" or word == "center" or word == "centre" then posH = word end
+    end
+  end
+end
+local function placeX(w, fits)
+  if not fits or posH == "left" then return 6 end
+  if posH == "right" then return 252 - w end
+  return math.floor((256 - w) / 2)
+end
+local textY = VY[posV]
+
 -- Scrolling for names too wide for the screen (idea from nesrex).
 local MAXW, SPEED, PAUSE = 244, 12, 75   -- pixel budget, frames per step, frames to hold at the start
 -- the emulator's font is proportional, so narrow characters count less (a slightly generous estimate keeps long names on screen)
@@ -60,12 +80,12 @@ while true do
     end
   end
   prev = a
-  -- names that fit are right-aligned; longer ones scroll from the left edge
+  -- names that fit go where position.txt says; longer ones scroll from the left edge
   local shown, fits = visible(current)
-  local x = fits and math.max(2, 252 - textw(shown)) or 6
+  local x = math.max(2, placeX(textw(shown), fits))
   for _, d in ipairs({ {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1} }) do
-    gui.text(x + d[1], 8 + d[2], shown, "black", "clear")   -- outline: black copies around the text
+    gui.text(x + d[1], textY + d[2], shown, "black", "clear")   -- outline: black copies around the text
   end
-  gui.text(x, 8, shown, "white", "clear")
+  gui.text(x, textY, shown, "white", "clear")
   emu.frameadvance()
 end

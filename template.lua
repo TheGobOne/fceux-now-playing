@@ -3,11 +3,15 @@
 local NAMES = {
 --NAMES--
 }
+-- The same names with accents and other non-ASCII characters folded, for drawing (FCEUX's font only has ASCII).
+local SHOWN = {
+--SHOWN--
+}
 -- A song request is a one-frame pulse on $0600: the bit number is the song number (01 overworld, 80 title).
 local REQUEST = { [0x01] = "overworld", [0x10] = "ending", [0x20] = "level9", [0x80] = "title" }
 local LEVEL_ADDR = 0x10   -- current level (1-9) while in a dungeon; shown on screen so a wrong guess is easy to spot
 
-local current, shownKey = "-", ""
+local current, currentShown, shownKey = "-", "-", ""
 local prev = 0
 
 local function publish()
@@ -65,17 +69,19 @@ end
 -- names that fit go where position.txt says; longer ones (or "scroll") move a pixel at a time from the left edge
 local function drawName(text, y)
   if not ALWAYS_SCROLL and textw(text) <= MAXW then
+    scroll.text = nil   -- a long name that comes back later starts its scroll over
     outlined(text, math.max(2, placeX(textw(text), true)), y)
     return
   end
-  if scroll.text ~= text then scroll.text, scroll.px, scroll.tick = text, 0, 0 end
+  if scroll.text ~= text then
+    scroll.text, scroll.px, scroll.tick = text, 0, 0
+    local loop = text .. "      "                     -- gap between the end and the start
+    scroll.loopW = math.max(1, math.floor(textw(loop)))
+    scroll.strip = string.rep(loop, math.ceil(262 / scroll.loopW) + 1)   -- enough copies to fill the screen width, so short names wrap without a hole
+  end
   scroll.tick = scroll.tick + 1
   if scroll.tick > PAUSE then scroll.px = scroll.px + SPEED / 60 end   -- the NES runs at 60 frames a second
-  local loop = text .. "      "                     -- gap between the end and the start
-  local loopW = math.floor(textw(loop))
-  local x0 = 6 - math.floor(scroll.px % loopW)                 -- two copies of the loop so the wrap has no gap
-  outlined(loop, x0, y)
-  outlined(loop, x0 + loopW, y)
+  outlined(scroll.strip, 6 - math.floor(scroll.px % scroll.loopW), y)
 end
 while true do
   local a = memory.readbyte(0x600)
@@ -91,10 +97,11 @@ while true do
     -- any other request is a jingle (item fanfare etc.), not a song: keep showing the current song
     if key and NAMES[key] and NAMES[key] ~= current then
       current = NAMES[key]
+      currentShown = SHOWN[key] or current
       publish()
     end
   end
   prev = a
-  drawName(current, textY)
+  drawName(currentShown, textY)
   emu.frameadvance()
 end

@@ -6,7 +6,7 @@ local SONGS = {
 --SONGS--
 }
 DEBUG = nil   -- set to io.open("z2debug.txt", "w") to log what the driver read at each check
-local current = "-"
+local current, currentShown = "-", "-"   -- currentShown is the name with non-ASCII characters folded, for drawing
 local TOP = 5           -- text row in pixels from the top, centered in the black band above the HUD (8 was too close to the HUD, 2 too high)
 -- Where the name is drawn: position.txt holds one line such as "top right" or "bottom left".
 -- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
@@ -56,17 +56,19 @@ end
 -- names that fit go where position.txt says; longer ones (or "scroll") move a pixel at a time from the left edge
 local function drawName(text, y)
   if not ALWAYS_SCROLL and textw(text) <= MAXW then
+    scroll.text = nil   -- a long name that comes back later starts its scroll over
     outlined(text, math.max(2, placeX(textw(text), true)), y)
     return
   end
-  if scroll.text ~= text then scroll.text, scroll.px, scroll.tick = text, 0, 0 end
+  if scroll.text ~= text then
+    scroll.text, scroll.px, scroll.tick = text, 0, 0
+    local loop = text .. "      "                     -- gap between the end and the start
+    scroll.loopW = math.max(1, math.floor(textw(loop)))
+    scroll.strip = string.rep(loop, math.ceil(262 / scroll.loopW) + 1)   -- enough copies to fill the screen width, so short names wrap without a hole
+  end
   scroll.tick = scroll.tick + 1
   if scroll.tick > PAUSE then scroll.px = scroll.px + SPEED / 60 end   -- the NES runs at 60 frames a second
-  local loop = text .. "      "                     -- gap between the end and the start
-  local loopW = math.floor(textw(loop))
-  local x0 = 6 - math.floor(scroll.px % loopW)                 -- two copies of the loop so the wrap has no gap
-  outlined(loop, x0, y)
-  outlined(loop, x0 + loopW, y)
+  outlined(scroll.strip, 6 - math.floor(scroll.px % scroll.loopW), y)
 end
 local a000 = 0         -- last value written to $5115: which bank is mapped at $A000 right now
 local counts = {}       -- reads of each song's data since the last check
@@ -102,13 +104,13 @@ local function pick()
   end
   counts, unknown = {}, {}
   -- nothing read from a known song (a sound effect or a song change in progress): keep the last known name
-  if best and SONGS[best].name ~= current then current = SONGS[best].name; publish() end
+  if best and SONGS[best].name ~= current then current = SONGS[best].name; currentShown = SONGS[best].shown or current; publish() end
 end
 
 local frame = 0
 while true do
   frame = frame + 1
   if frame % 20 == 0 then pick() end
-  drawName(current, textY)
+  drawName(currentShown, textY)
   emu.frameadvance()
 end

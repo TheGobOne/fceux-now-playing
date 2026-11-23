@@ -12,4 +12,4 @@ if errorlevel 1 (
   start "" "%FCEUX%" "%~1"
   exit /b
 )
-start "" "%FCEUX%" -lua "%~dp0music-now.lua" "%~1"
+start "" "%FCEUX%" -lua "%~dp0music-now-z2.lua" "%~1"

@@ -1,4 +1,4 @@
--- music-now.lua (Z2R): shows the name of the song playing in --ROM-- and writes it to nowplaying.txt for OBS.
+-- music-now-z2.lua (Z2R): shows the name of the song playing in --ROM-- and writes it to nowplaying.txt for OBS.
 -- Contains the track names for this seed: open it only if you don't mind spoilers.
 -- Z2R maps the song's 8 KB bank in at $A000 through MMC5 register $5115 (bank = value - $80, banks 16-27).
 -- The music driver reads the playing song's data from there every frame, so the addresses it reads in $A000-$BFFF say which song is playing.
@@ -18,7 +18,10 @@ do
   local f = io.open("position.txt", "r")
   if f then
     local line = ""
-    for l in f:lines() do if l:find("%S") then line = l:lower(); break end end   -- first non-empty line
+    for l in f:lines() do
+      l = (l:gsub("^\239\187\191", ""))   -- a byte order mark does not make a line non-empty
+      if l:find("%S") then line = l:lower(); break end
+    end   -- first non-empty line
     f:close()
     local n = tonumber(line:match("speed%s*[:=]?%s*(%d+)"))
     if n then SPEED = math.max(1, math.min(120, n)) end
@@ -92,9 +95,10 @@ local a000 = 0         -- last value written to $5115: which bank is mapped at $
 local counts = {}       -- reads of each song's data since the last check
 local unknown = {}      -- music-bank reads that fall in no known song, per bank (for the debug log)
 
+local dirty = false   -- true while the last write to nowplaying.txt failed (the file was locked); the main loop retries
 local function publish()
   local f = io.open("nowplaying.txt", "w")
-  if f then f:write(current); f:close() end
+  if f then f:write(current); f:close(); dirty = false else dirty = true end
 end
 publish()
 
@@ -131,6 +135,7 @@ local frame = 0
 while true do
   frame = frame + 1
   if frame % 20 == 0 then pick() end
+  if dirty and frame % 45 == 0 then publish() end   -- retry a failed write about every 0.75 s
   drawName(currentShown, textY)
   emu.frameadvance()
 end

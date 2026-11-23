@@ -1,4 +1,4 @@
--- music-now.lua: shows the name of the song playing in your ZORA ROM (seed 1758187119) and writes it to nowplaying.txt for OBS.
+-- music-now-zora.lua: shows the name of the song playing in your ZORA ROM (seed 1758187119) and writes it to nowplaying.txt for OBS.
 -- Contains the track names for this seed: open it only if you don't mind spoilers.
 local NAMES = {
 --NAMES--
@@ -14,9 +14,10 @@ local LEVEL_ADDR = 0x10   -- current level (1-9) while in a dungeon
 local current, currentShown = "-", "-"
 local prev = 0
 
+local dirty = false   -- true while the last write to nowplaying.txt failed (the file was locked); the main loop retries
 local function publish()
   local f = io.open("nowplaying.txt", "w")
-  if f then f:write(current); f:close() end
+  if f then f:write(current); f:close(); dirty = false else dirty = true end
 end
 publish()
 
@@ -30,7 +31,10 @@ do
   local f = io.open("position.txt", "r")
   if f then
     local line = ""
-    for l in f:lines() do if l:find("%S") then line = l:lower(); break end end   -- first non-empty line
+    for l in f:lines() do
+      l = (l:gsub("^\239\187\191", ""))   -- a byte order mark does not make a line non-empty
+      if l:find("%S") then line = l:lower(); break end
+    end   -- first non-empty line
     f:close()
     local n = tonumber(line:match("speed%s*[:=]?%s*(%d+)"))
     if n then SPEED = math.max(1, math.min(120, n)) end
@@ -101,17 +105,33 @@ local function drawName(text, y)
   if scroll.tick > PAUSE then scroll.px = scroll.px + SPEED / 60 end   -- the NES runs at 60 frames a second
   outlined(scroll.strip, 6 - math.floor(scroll.px % scroll.loopW), y)
 end
+local function setSong(key)
+  if key and NAMES[key] and NAMES[key] ~= current then
+    current = NAMES[key]
+    currentShown = SHOWN[key] or current
+    publish()
+  end
+end
+
+local lastFrame = emu.framecount() - 1
+local frames = 0
 while true do
+  frames = frames + 1
+  -- A loaded savestate sends no song request, so the frame counter jumping is the cue to work the song out from the level byte.
+  -- Only in play mode ($12 = 5): in caves, cellars and menus the song is not known from here, so the name stays.
+  local fc = emu.framecount()
+  if fc ~= lastFrame + 1 and memory.readbyte(0x12) == 5 then
+    local lvl = memory.readbyte(LEVEL_ADDR)
+    setSong(lvl == 0 and "overworld" or "level" .. lvl)
+  end
+  lastFrame = fc
+  if dirty and frames % 45 == 0 then publish() end   -- retry a failed write about every 0.75 s
   local a = memory.readbyte(0x600)
   if a ~= 0 and a ~= prev then
     local key = REQUEST[a]
     if a == 0x40 then key = "level" .. memory.readbyte(LEVEL_ADDR) end
     -- any other request is a jingle (item fanfare etc.), not a song: keep showing the current song
-    if key and NAMES[key] and NAMES[key] ~= current then
-      current = NAMES[key]
-      currentShown = SHOWN[key] or current
-      publish()
-    end
+    setSong(key)
   end
   prev = a
   drawName(currentShown, textY)

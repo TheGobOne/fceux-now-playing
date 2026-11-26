@@ -8,7 +8,7 @@ jobs:
   template:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Lua 5.1 (the version FCEUX embeds)
         run: sudo apt-get update && sudo apt-get install -y lua5.1

@@ -87,7 +87,7 @@ const clean = s => s.replace(/[\x00-\x1f\x7f]/g, " ");   // control characters w
 const fold = s => foldName(clean(s));   // FCEUX font is ASCII only (see fold.js)
 const names = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringify(clean(v))},`).join("\n");
 const shown = Object.entries(best.out).map(([k, v]) => `  ${k} = ${JSON.stringify(fold(v))},`).join("\n");
-const lua = fs.readFileSync(path.join(__dirname, "template.lua"), "utf8").replace("--NAMES--", () => names).replace("--SHOWN--", () => shown).replace(/seed \d+/, () => path.basename(rom));
-fs.writeFileSync(path.join(__dirname, "music-now-zora.lua"), lua);
+const lua = fs.readFileSync(path.join(__dirname, "template.lua"), "utf8").replace("--NAMES--", () => names).replace("--SHOWN--", () => shown).replace(/seed \d+/, () => path.basename(rom)).replace("--DIR--", () => __dirname.replace(/\\/g, "/") + "/");
+fs.writeFileSync(process.env.NOWPLAYING_OUT || path.join(__dirname, "music-now-zora.lua"), lua);
 console.log(`Matched ${best.sure} of 12 slots across ${PACKS.length} packs (${cands.length} tracks, ${cached ? "from cache" : "parsed"}, layout ${LAYOUT.name}, ${((Date.now() - t0) / 1000).toFixed(1)}s). Unmatched: ${Object.entries(best.out).filter(([, v]) => v === "unknown").map(([k]) => k).join(", ") || "none"}.`);
 if (best.dbg.length) console.log("Unsure slots:\n  " + best.dbg.join("\n  "));

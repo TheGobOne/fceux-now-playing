@@ -57,6 +57,6 @@ if (!keep.length) { console.log("No pack track found in this ROM. Not written.")
 const clean = s => s.replace(/[\x00-\x1f\x7f]/g, " ");   // control characters would come out as text in Lua 5.1
 const fold = s => foldName(clean(s));   // FCEUX font is ASCII only (see fold.js)
 const rows = keep.map(s => `  { bank = ${s.bank}, lo = 0x${s.lo.toString(16)}, hi = 0x${s.hi.toString(16)}, uses = ${JSON.stringify(s.uses)}, name = ${JSON.stringify(clean(s.name))}, shown = ${JSON.stringify(fold(s.name))} },`).join("\n");
-const lua = fs.readFileSync(path.join(__dirname, "template-z2.lua"), "utf8").replace("--SONGS--", () => rows).replace("--ROM--", () => path.basename(rom));
-fs.writeFileSync(path.join(__dirname, "music-now-z2.lua"), lua);
+const lua = fs.readFileSync(path.join(__dirname, "template-z2.lua"), "utf8").replace("--SONGS--", () => rows).replace("--ROM--", () => path.basename(rom)).replace("--DIR--", () => __dirname.replace(/\\/g, "/") + "/");
+fs.writeFileSync(process.env.NOWPLAYING_OUT || path.join(__dirname, "music-now-z2.lua"), lua);
 console.log(`Found ${keep.length} songs in this ROM (${new Set(keep.map(s => s.bank)).size} banks).`);

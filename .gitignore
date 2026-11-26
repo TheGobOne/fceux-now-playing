@@ -5,6 +5,8 @@ nowplaying.txt
 z2debug.txt
 packs-zora.txt
 packs-z2r.txt
+packs-dwr.txt
+music-now-dwr.lua
 fceux-path.txt
 *.nes
 *.json5

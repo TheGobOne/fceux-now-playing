@@ -45,6 +45,7 @@ These options work for both games. Edit the one line in `position.txt`: `top`, `
 
 ## Troubleshooting
 
+- **`No pack matched` or the Usage message appears:** check that the list file is named `packs-zora.txt` (or `packs-z2r.txt`), not `packs-zora.txt.txt`. Windows hides known extensions by default, so turn on File name extensions in File Explorer's View menu to see the real name.
 - **`Could not match this ROM to your packs`:** read the line above it. Check that Node.js is installed and that your `packs-zora.txt` or `packs-z2r.txt` lists the packs the ROM was built from.
 - **FCEUX doesn't open:** put the full path to `fceux64.exe` in `fceux-path.txt`.
 - **A song shows as `unknown` or the name doesn't change:** add the missing pack to your list and start the ROM again.

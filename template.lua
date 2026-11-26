@@ -30,6 +30,7 @@ local VY = { top = 8, middle = 116, bottom = 227 }
 local posV, posH = "top", "right"
 local SPEED = 15              -- scroll speed in pixels a second; "speed 30" in position.txt changes it (1 to 120)
 local ALWAYS_SCROLL = false   -- the word "scroll" in position.txt keeps the name moving even when it fits
+local HIDE = false            -- the word "hide" in position.txt stops drawing the name in FCEUX; nowplaying.txt is still written for OBS
 do
   local f = io.open(NP_DIR .. "position.txt", "r")
   if f then
@@ -47,6 +48,7 @@ do
       elseif word == "left" or word == "right" then h = word
       elseif word == "center" or word == "centre" then h = "center"
       elseif word == "scroll" then ALWAYS_SCROLL = true
+      elseif word == "hide" or word == "off" then HIDE = true
       elseif word == "middle" then middles = middles + 1 end
     end
     -- "middle" fills whichever of the two is still unset: "bottom middle" is bottom + centered, "middle left" is vertically centered
@@ -138,7 +140,7 @@ function nowplaying_tick()
     setSong(key)
   end
   prev = a
-  drawName(currentShown, textY)
+  if not HIDE then drawName(currentShown, textY) end
 end
 
 -- Standalone launch runs the loop here. The AP connector sets NOWPLAYING_EMBEDDED and calls nowplaying_tick() each frame itself.

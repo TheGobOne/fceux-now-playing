@@ -34,19 +34,13 @@ node make-z2-lua.js <z2r-rom.nes> [pack.json5 ...]
 
 ### DWR
 
-DWR has no `.bat` file. The script expects the song list that dwrandomizer writes beside a ROM built with a music pack: `<ROM name>.music.txt`, in the same folder as the ROM.
+Drag your ROM onto `fceux-with-music-dwr.bat`. The script expects the song list that dwrandomizer writes beside a ROM built with a music pack: `<ROM name>.music.txt`, in the same folder as the ROM. It writes `music-now-dwr.lua` and opens FCEUX running it.
 
-1. Write the Lua file for your ROM:
+Or run the generator yourself:
 
-   ```
-   node make-dwr-lua.js <dwr-rom.nes>
-   ```
-
-2. Open FCEUX running it, with full paths:
-
-   ```
-   fceux64.exe -lua <path to music-now-dwr.lua> <path to dwr-rom.nes>
-   ```
+```
+node make-dwr-lua.js <dwr-rom.nes>
+```
 
 Nothing is written if the song list is missing or names no songs. `packs-dwr.txt` is only used to separate the game name from the song name when either one contains `: `. Without it, the split is at the last `: `. Jingles and scenes that keep the game's own music leave the previous name on screen.
 
@@ -64,6 +58,7 @@ These options work for all three games. Edit the one line in `position.txt`: `to
 
 ## Troubleshooting
 
+- **`Could not read the song list for this ROM` (DWR):** read the line above it. Check that Node.js is installed and that `<ROM name>.music.txt` is beside the ROM.
 - **`Could not match this ROM to your packs`:** read the line above it. Check that Node.js is installed and that your `packs-zora.txt` or `packs-z2r.txt` lists the packs the ROM was built from.
 - **FCEUX doesn't open:** put the full path to `fceux64.exe` in `fceux-path.txt`.
 - **A song shows as `unknown` or the name doesn't change:** for ZORA and Z2R, add the missing pack to your list and start the ROM again.

@@ -14,21 +14,24 @@ local LEVEL_ADDR = 0x10   -- current level (1-9) while in a dungeon
 local current, currentShown = "-", "-"
 local prev = 0
 
+-- Folder that holds position.txt and nowplaying.txt (the fceux-now-playing folder), filled in by the generator.
+-- Under the AP connector, FCEUX runs in the connector's folder, so plain relative names would point there.
+local NP_DIR = "--DIR--"
 local dirty = false   -- true while the last write to nowplaying.txt failed (the file was locked); the main loop retries
 local function publish()
-  local f = io.open("nowplaying.txt", "w")
+  local f = io.open(NP_DIR .. "nowplaying.txt", "w")
   if f then f:write(current); f:close(); dirty = false else dirty = true end
 end
 publish()
 
 -- Where the name is drawn: position.txt holds one line such as "top right" or "bottom left".
 -- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
-local VY = { top = 8, middle = 116, bottom = 224 }
+local VY = { top = 8, middle = 116, bottom = 227 }
 local posV, posH = "top", "right"
 local SPEED = 15              -- scroll speed in pixels a second; "speed 30" in position.txt changes it (1 to 120)
 local ALWAYS_SCROLL = false   -- the word "scroll" in position.txt keeps the name moving even when it fits
 do
-  local f = io.open("position.txt", "r")
+  local f = io.open(NP_DIR .. "position.txt", "r")
   if f then
     local line = ""
     for l in f:lines() do
@@ -115,7 +118,8 @@ end
 
 local lastFrame = emu.framecount() - 1
 local frames = 0
-while true do
+
+function nowplaying_tick()
   frames = frames + 1
   -- A loaded savestate sends no song request, so the frame counter jumping is the cue to work the song out from the level byte.
   -- Only in play mode ($12 = 5): in caves, cellars and menus the song is not known from here, so the name stays.
@@ -135,5 +139,12 @@ while true do
   end
   prev = a
   drawName(currentShown, textY)
-  emu.frameadvance()
+end
+
+-- Standalone launch runs the loop here. The AP connector sets NOWPLAYING_EMBEDDED and calls nowplaying_tick() each frame itself.
+if not NOWPLAYING_EMBEDDED then
+  while true do
+    nowplaying_tick()
+    emu.frameadvance()
+  end
 end

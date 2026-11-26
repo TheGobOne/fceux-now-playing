@@ -6,16 +6,19 @@ local SONGS = {
 --SONGS--
 }
 DEBUG = nil   -- set to io.open("z2debug.txt", "w") to log what the driver read at each check
+-- Folder that holds position.txt and nowplaying.txt (the fceux-now-playing folder), filled in by the generator.
+-- Under the AP connector, FCEUX runs in the connector's folder, so plain relative names would point there.
+local NP_DIR = "--DIR--"
 local current, currentShown = "-", "-"   -- currentShown is the name with non-ASCII characters folded, for drawing
 local TOP = 5           -- text row in pixels from the top, centered in the black band above the HUD (8 was too close to the HUD, 2 too high)
 -- Where the name is drawn: position.txt holds one line such as "top right" or "bottom left".
 -- Vertical: top, middle or bottom. Horizontal: left, center or right. Missing or unreadable file means top right.
-local VY = { top = TOP, middle = 116, bottom = 224 }
+local VY = { top = TOP, middle = 116, bottom = 227 }
 local posV, posH = "top", "right"
 local SPEED = 15              -- scroll speed in pixels a second; "speed 30" in position.txt changes it (1 to 120)
 local ALWAYS_SCROLL = false   -- the word "scroll" in position.txt keeps the name moving even when it fits
 do
-  local f = io.open("position.txt", "r")
+  local f = io.open(NP_DIR .. "position.txt", "r")
   if f then
     local line = ""
     for l in f:lines() do
@@ -97,7 +100,7 @@ local unknown = {}      -- music-bank reads that fall in no known song, per bank
 
 local dirty = false   -- true while the last write to nowplaying.txt failed (the file was locked); the main loop retries
 local function publish()
-  local f = io.open("nowplaying.txt", "w")
+  local f = io.open(NP_DIR .. "nowplaying.txt", "w")
   if f then f:write(current); f:close(); dirty = false else dirty = true end
 end
 publish()
@@ -132,10 +135,18 @@ local function pick()
 end
 
 local frame = 0
-while true do
+
+function nowplaying_tick()
   frame = frame + 1
   if frame % 20 == 0 then pick() end
   if dirty and frame % 45 == 0 then publish() end   -- retry a failed write about every 0.75 s
   drawName(currentShown, textY)
-  emu.frameadvance()
+end
+
+-- Standalone launch runs the loop here. The AP connector sets NOWPLAYING_EMBEDDED and calls nowplaying_tick() each frame itself.
+if not NOWPLAYING_EMBEDDED then
+  while true do
+    nowplaying_tick()
+    emu.frameadvance()
+  end
 end

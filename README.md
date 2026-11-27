@@ -33,7 +33,7 @@ node make-z2-lua.js <z2r-rom.nes> [pack.json5 ...]
 
 ## Position
 
-These options work for both games. Edit the one line in `position.txt`: `top`, `middle` or `bottom`, then `left`, `center` or `right` (for example `bottom left`). Add `speed 30` to set the scroll speed in pixels a second (1 to 120, default 15). Add the word `scroll` (for example `bottom left scroll`) to keep the name scrolling even when it fits. `bottom middle` works too: a lone `middle` fills whichever part you left out. Restart the script in FCEUX after changing it. A name too wide for the screen ignores the left, center or right setting: it starts at the left edge, waits about a second, then scrolls.
+These options work for both games. Edit the one line in `position.txt`: `top`, `middle` or `bottom`, then `left`, `center` or `right` (for example `bottom left`). Add `speed 30` to set the scroll speed in pixels a second (1 to 120, default 15). Add the word `scroll` (for example `bottom left scroll`) to keep the name scrolling even when it fits. Add the word `hide` (or `off`) to stop drawing the name in FCEUX while `nowplaying.txt` is still written for OBS. `bottom middle` works too: a lone `middle` fills whichever part you left out. Restart the script in FCEUX after changing it. A name too wide for the screen ignores the left, center or right setting: it starts at the left edge, waits about a second, then scrolls.
 
 ## OBS
 

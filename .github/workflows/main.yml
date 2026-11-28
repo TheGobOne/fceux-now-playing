@@ -1,0 +1,23 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Lua 5.1 (the version FCEUX embeds)
+        run: sudo apt-get update && sudo apt-get install -y lua5.1
+
+      - name: Template parses as Lua 5.1
+        run: luac5.1 -p template.lua
+
+      - name: Run template tests against a mock FCEUX
+        run: lua5.1 test/template-test.lua
+
+      - name: JavaScript files parse
+        run: for f in *.js; do node --check "$f"; done

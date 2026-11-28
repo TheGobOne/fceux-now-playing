@@ -72,7 +72,7 @@ function matchPack(cands) {
       if (!best || s > best.s) { if (best && !dup(best.t, t)) second = best.s; best = { s, t }; } else if (s > second && !dup(best.t, t)) second = s;
     }
     // an essentially exact copy (0.98+) wins over a lower-scoring near-copy of the same song
-    const ok = best && best.s > 0.3 && (best.s > second + 0.10 || (best.s >= 0.98 && best.s > second + 0.01));
+    const ok = best && best.s > 0.3 && (best.s > second + 0.10 || (best.s >= 0.95 && best.s > second + 0.03));
     if (ok) sure++;
     if (!ok) dbg.push(`${name}: best ${best ? best.s.toFixed(2) : "none"}, runner-up ${second.toFixed(2)}`);
     out[name] = ok ? `${best.t.title.replace(/^\s*\d+\s*[-.–]\s*/, "")} (${best.t.game})` : "unknown";

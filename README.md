@@ -40,8 +40,15 @@ These options work for both games. Edit the one line in `position.txt`: `top`, `
 `nowplaying.txt` is in this folder and is rewritten when the song changes.
 
 1. In OBS, add a **Text (GDI+)** source.
-2. In its properties, tick **Read from file**.
-3. Choose `nowplaying.txt`.
+2. Right CLick Select Transform then Edit
+3. Set the bounds to Fit, Width to 900 px by 200 px
+4. In it's properties, tick **Read from file**.
+5. Choose `nowplaying.txt`.
+6. Set alignments to Center
+7. Check Use Custom Text Entrants
+8. Set Width to 3100 and Height to 555 & checkmark Wrap
+
+This should give you a box to display the text you can then resize on your layout & it will keep the text size for you and you can change it as needed & customzize your text size and color from there. 
 
 ## Troubleshooting
 
